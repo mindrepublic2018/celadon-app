@@ -275,8 +275,39 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
   const [loading, setLoading] = useState(false);
   const [manualKm, setManualKm] = useState("");
   const [imageFile, setImageFile] = useState(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState(null);
 
-  const handleFileSelect = (file) => { if(file) { setImageFile(file); setStep(1); } };
+  const handleFileSelect = async (file) => {
+    if(!file) return;
+    setImageFile(file);
+    setStep(1);
+    setOcrLoading(true);
+    setOcrResult(null);
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const resp = await fetch('/api/ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 }),
+      });
+      const data = await resp.json();
+      if(data.km && data.km > 0) {
+        setManualKm(String(data.km));
+        setOcrResult({ success: true, km: data.km });
+      } else {
+        setOcrResult({ success: false });
+      }
+    } catch(e) {
+      setOcrResult({ success: false });
+    }
+    setOcrLoading(false);
+  };
 
   const handleUpload = async () => {
     const kmVal = parseFloat(manualKm);
@@ -317,6 +348,17 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
           <div style={{ fontSize:11, color:"#ACE1AF", fontWeight:600, marginBottom:4 }}>✅ 이미지 선택 완료</div>
           <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)" }}>{imageFile?.name}</div>
         </div>
+        {ocrLoading && (<div style={{ padding:"20px", borderRadius:14, background:"rgba(172,225,175,0.04)", border:"1px solid rgba(172,225,175,0.08)", marginBottom:20, textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:8, animation:"spin 1s linear infinite" }}>🔍</div>
+          <div style={{ fontSize:12, color:"#ACE1AF", fontWeight:600 }}>AI가 거리를 분석 중...</div>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginTop:4 }}>나이키 런클럽 캡쳐에서 km를 인식하고 있어요</div>
+        </div>)}
+        {ocrResult && ocrResult.success && (<div style={{ padding:"14px 18px", borderRadius:14, background:"rgba(172,225,175,0.08)", border:"1px solid rgba(172,225,175,0.15)", marginBottom:20 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:16 }}>🤖</span><div><div style={{ fontSize:12, color:"#ACE1AF", fontWeight:600 }}>AI 자동 인식 완료!</div><div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>인식된 거리가 자동 입력되었습니다. 확인 후 수정해주세요.</div></div></div>
+        </div>)}
+        {ocrResult && !ocrResult.success && (<div style={{ padding:"14px 18px", borderRadius:14, background:"rgba(255,215,0,0.05)", border:"1px solid rgba(255,215,0,0.12)", marginBottom:20 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:16 }}>⚠️</span><div><div style={{ fontSize:12, color:"#FFD700", fontWeight:600 }}>자동 인식 실패</div><div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>거리를 직접 입력해주세요</div></div></div>
+        </div>)}
         <div style={{ marginBottom:20 }}>
           <label style={labelStyle}>이번 달 러닝 거리 (km)</label>
           <input type="number" placeholder="예: 42" value={manualKm} onChange={e=>setManualKm(e.target.value)} style={{ ...inputStyle, fontSize:24, textAlign:"center", padding:"20px 16px" }}/>
