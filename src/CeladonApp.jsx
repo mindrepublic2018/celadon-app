@@ -651,8 +651,18 @@ export default function CeladonApp() {
   };
 
   const loadAllUsers = async () => {
-    const {data} = await supabase.from('user_stats').select('*');
-    if(data) setAllUsers(data.map(u=>({ ...u, total_km:Math.round(Number(u.total_km)), total_donation:Math.round(Number(u.total_donation)), isMe:u.id===user?.id })));
+    const [{ data: profiles }, { data: recs }] = await Promise.all([
+      supabase.from('profiles').select('id, name, full_name'),
+      supabase.from('running_records').select('user_id, km')
+    ]);
+    if(profiles) {
+      const userMap = profiles.map(p => {
+        const userRecs = (recs||[]).filter(r=>r.user_id===p.id);
+        const totalKm = Math.round(userRecs.reduce((a,r)=>a+Number(r.km),0));
+        return { id:p.id, name:p.name||p.full_name||"러너", total_km:totalKm, total_donation:totalKm*500, isMe:p.id===user?.id };
+      });
+      setAllUsers(userMap);
+    }
   };
 
   const handleLogin = (authUser) => { setUser(authUser); setScreen(SCREENS.HOME); };
