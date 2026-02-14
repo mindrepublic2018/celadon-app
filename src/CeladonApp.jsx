@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
 
-const SCREENS = { SPLASH:"splash", LOGIN:"login", SIGNUP:"signup", RESET_PW:"reset_pw", HOME:"home", UPLOAD:"upload", RESULT:"result", LEADERBOARD:"leaderboard", MYPAGE:"mypage", EVENT:"event", CERTIFICATE:"certificate", MEMBERS:"members" };
+const SCREENS = { SPLASH:"splash", LOGIN:"login", SIGNUP:"signup", HOME:"home", UPLOAD:"upload", RESULT:"result", LEADERBOARD:"leaderboard", MYPAGE:"mypage", EVENT:"event", CERTIFICATE:"certificate", MEMBERS:"members" };
 
 function useCountUp(target, duration=1500, start=false) {
   const [value, setValue] = useState(0);
@@ -79,65 +79,11 @@ function LoginScreen({ setScreen, onLogin }) {
           <button style={{ flex:1, padding:"14px", borderRadius:12, cursor:"pointer", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.08)", fontSize:13, fontWeight:600, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", gap:8, opacity:0.5 }}><span style={{ fontSize:16 }}>G</span> Google (준비중)</button>
         </div>
         <div style={{ textAlign:"center", marginTop:28 }}>
-          <button onClick={()=>setScreen(SCREENS.RESET_PW)} style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.25)", fontSize:12, marginBottom:12, display:"block", width:"100%" }}>비밀번호를 잊으셨나요?</button>
+          <button style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.25)", fontSize:12, marginBottom:12, display:"block", width:"100%" }}>비밀번호를 잊으셨나요?</button>
           <div style={{ fontSize:12, color:"rgba(255,255,255,0.3)" }}>아직 회원이 아니신가요?{" "}<button onClick={()=>setScreen(SCREENS.SIGNUP)} style={{ background:"none", border:"none", cursor:"pointer", color:"#ACE1AF", fontSize:12, fontWeight:600, textDecoration:"underline", textUnderlineOffset:3 }}>회원가입</button></div>
         </div>
       </div>
       <div style={{ padding:"20px 24px 32px", textAlign:"center" }}><div style={{ fontSize:9, color:"rgba(255,255,255,0.15)", fontFamily:"'Space Mono', monospace", letterSpacing:2 }}>🕊️ RUN FOR HOPE · 1KM = 500원</div></div>
-    </div>
-  );
-}
-
-function ResetPasswordScreen({ setScreen }) {
-  const [animate, setAnimate] = useState(false);
-  const [email, setEmail] = useState("");
-  const [focusedField, setFocusedField] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
-  useEffect(() => { setTimeout(()=>setAnimate(true),100); }, []);
-
-  const handleReset = async () => {
-    if(!email) { setError("이메일을 입력해주세요"); return; }
-    if(!/\S+@\S+\.\S+/.test(email)) { setError("올바른 이메일 형식이 아닙니다"); return; }
-    setLoading(true); setError("");
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/?reset=true',
-    });
-    if(resetError) { setError(resetError.message); setLoading(false); return; }
-    setSent(true); setLoading(false);
-  };
-
-  if(sent) {
-    return (
-      <div style={{ height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:"linear-gradient(180deg, #0a0a0a 0%, #0d1a12 100%)", padding:"0 24px", textAlign:"center" }}>
-        <div style={{ width:80, height:80, borderRadius:"50%", background:"rgba(172,225,175,0.1)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:24 }}><span style={{ fontSize:36 }}>✉️</span></div>
-        <div style={{ fontSize:20, fontFamily:"'Cormorant Garamond', serif", fontWeight:600, color:"#ACE1AF", marginBottom:12 }}>이메일을 확인해주세요</div>
-        <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)", lineHeight:1.8, marginBottom:8 }}>{email}</div>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.3)", lineHeight:1.8, marginBottom:32 }}>비밀번호 재설정 링크를 보냈습니다.<br/>이메일의 링크를 클릭해서 새 비밀번호를 설정하세요.</div>
-        <button onClick={()=>setScreen(SCREENS.LOGIN)} style={{ padding:"14px 36px", borderRadius:14, border:"none", cursor:"pointer", background:"linear-gradient(135deg, #ACE1AF, #8FBC8F)", fontSize:14, fontWeight:700, color:"#0a0a0a" }}>로그인으로 돌아가기</button>
-        <div style={{ fontSize:10, color:"rgba(255,255,255,0.2)", marginTop:20 }}>이메일이 안 오면 스팸함을 확인해주세요</div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ height:"100%", overflowY:"auto", background:"linear-gradient(180deg, #0a0a0a 0%, #0d1a12 100%)", display:"flex", flexDirection:"column" }}>
-      <div style={{ padding:"50px 24px 8px", display:"flex", alignItems:"center", gap:12 }}>
-        <button onClick={()=>setScreen(SCREENS.LOGIN)} style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:20, padding:"4px 8px" }}>←</button>
-        <div><div style={{ color:"rgba(172,225,175,0.4)", fontSize:10, fontFamily:"'Space Mono', monospace", letterSpacing:3 }}>RESET PASSWORD</div><div style={{ color:"#fff", fontSize:18, fontFamily:"'Cormorant Garamond', serif", fontWeight:600, marginTop:2, letterSpacing:1 }}>비밀번호 재설정</div></div>
-      </div>
-      <div style={{ flex:1, padding:"32px 24px", opacity:animate?1:0, transform:animate?"translateY(0)":"translateY(16px)", transition:"all 0.5s cubic-bezier(0.16,1,0.3,1)" }}>
-        <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)", lineHeight:1.8, marginBottom:28 }}>가입할 때 사용한 이메일을 입력하시면<br/>비밀번호 재설정 링크를 보내드립니다.</div>
-        {error && <div style={{ padding:"10px 14px", borderRadius:10, background:"rgba(255,100,100,0.08)", border:"1px solid rgba(255,100,100,0.15)", marginBottom:16 }}><div style={{ fontSize:12, color:"rgba(255,100,100,0.8)" }}>{error}</div></div>}
-        <div style={{ marginBottom:20 }}>
-          <label style={labelStyle}>이메일</label>
-          <input type="email" placeholder="email@example.com" value={email} onChange={e=>{setEmail(e.target.value);setError("");}} onFocus={()=>setFocusedField("email")} onBlur={()=>setFocusedField(null)} onKeyDown={e=>e.key==="Enter"&&handleReset()} style={{ ...inputStyle, borderColor:focusedField==="email"?inputFocusColor:"rgba(172,225,175,0.12)" }}/>
-        </div>
-        <button onClick={handleReset} disabled={loading} style={{ width:"100%", padding:"16px", borderRadius:14, border:"none", cursor:loading?"wait":"pointer", background:email?"linear-gradient(135deg, #ACE1AF, #8FBC8F)":"rgba(172,225,175,0.1)", fontSize:15, fontWeight:700, color:email?"#0a0a0a":"rgba(172,225,175,0.3)", transition:"all 0.3s ease", opacity:loading?0.7:1 }}>
-          {loading?"전송 중...":"재설정 링크 보내기"}
-        </button>
-      </div>
     </div>
   );
 }
@@ -275,62 +221,23 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
   const [loading, setLoading] = useState(false);
   const [manualKm, setManualKm] = useState("");
   const [imageFile, setImageFile] = useState(null);
-  const [ocrLoading, setOcrLoading] = useState(false);
-  const [ocrResult, setOcrResult] = useState(null);
-  const [copied, setCopied] = useState(false);
 
-  const handleFileSelect = async (file) => {
-    if(!file) return;
-    setImageFile(file);
-    setStep(1);
-    setOcrLoading(true);
-    setOcrResult(null);
-    try {
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const resp = await fetch('/api/ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64 }),
-      });
-      const data = await resp.json();
-      if(data.km && data.km > 0) {
-        setManualKm(String(data.km));
-        setOcrResult({ success: true, km: data.km });
-      } else {
-        setOcrResult({ success: false });
-      }
-    } catch(e) {
-      setOcrResult({ success: false });
-    }
-    setOcrLoading(false);
-  };
+  const handleFileSelect = (file) => { if(file) { setImageFile(file); setStep(1); } };
 
   const handleUpload = async () => {
     const kmVal = parseFloat(manualKm);
     if(!kmVal || kmVal<=0) return;
     setLoading(true);
-    const now = new Date();
-    const recordMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    // 같은 달 중복 체크
-    const { data: monthRecords } = await supabase.from('running_records').select('id').eq('user_id', user.id).eq('record_month', recordMonth);
-    if(monthRecords && monthRecords.length > 0) {
-      alert('이번 달은 이미 러닝 기록을 제출했습니다. 다음 달에 다시 인증해주세요.');
-      setLoading(false);
-      return;
-    }
     let imageUrl = null;
     if(imageFile) {
       const fileName = `${user.id}/${Date.now()}_${imageFile.name}`;
       const { data: ud, error: ue } = await supabase.storage.from('running-images').upload(fileName, imageFile);
       if(!ue && ud) { const { data: urlD } = supabase.storage.from('running-images').getPublicUrl(ud.path); imageUrl = urlD.publicUrl; }
     }
-    const { error: ie } = await supabase.from('running_records').insert({ user_id:user.id, km:kmVal, image_url:imageUrl, record_month:recordMonth, payment_status:'대기'});
-    if(ie) { alert('저장에 실패했습니다. 다시 시도해주세요.'); setLoading(false); return; }
+    const now = new Date();
+    const recordMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const { error: ie } = await supabase.from('running_records').insert({ user_id:user.id, km:kmVal, image_url:imageUrl, record_month:recordMonth, payment_status: + "대기" + r});
+    if(ie) { alert( + "저장에 실패했습니다. 다시 시도해주세요." + r); setLoading(false); return; }
     setKm(kmVal); setStep(2); setLoading(false); onUploadComplete();
   };
 
@@ -356,17 +263,6 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
           <div style={{ fontSize:11, color:"#ACE1AF", fontWeight:600, marginBottom:4 }}>✅ 이미지 선택 완료</div>
           <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)" }}>{imageFile?.name}</div>
         </div>
-        {ocrLoading && (<div style={{ padding:"20px", borderRadius:14, background:"rgba(172,225,175,0.04)", border:"1px solid rgba(172,225,175,0.08)", marginBottom:20, textAlign:"center" }}>
-          <div style={{ fontSize:20, marginBottom:8, animation:"spin 1s linear infinite" }}>🔍</div>
-          <div style={{ fontSize:12, color:"#ACE1AF", fontWeight:600 }}>AI가 거리를 분석 중...</div>
-          <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginTop:4 }}>나이키 런클럽 캡쳐에서 km를 인식하고 있어요</div>
-        </div>)}
-        {ocrResult && ocrResult.success && (<div style={{ padding:"14px 18px", borderRadius:14, background:"rgba(172,225,175,0.08)", border:"1px solid rgba(172,225,175,0.15)", marginBottom:20 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:16 }}>🤖</span><div><div style={{ fontSize:12, color:"#ACE1AF", fontWeight:600 }}>AI 자동 인식 완료!</div><div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>인식된 거리가 자동 입력되었습니다. 확인 후 수정해주세요.</div></div></div>
-        </div>)}
-        {ocrResult && !ocrResult.success && (<div style={{ padding:"14px 18px", borderRadius:14, background:"rgba(255,215,0,0.05)", border:"1px solid rgba(255,215,0,0.12)", marginBottom:20 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:16 }}>⚠️</span><div><div style={{ fontSize:12, color:"#FFD700", fontWeight:600 }}>자동 인식 실패</div><div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>거리를 직접 입력해주세요</div></div></div>
-        </div>)}
         <div style={{ marginBottom:20 }}>
           <label style={labelStyle}>이번 달 러닝 거리 (km)</label>
           <input type="number" placeholder="예: 42" value={manualKm} onChange={e=>setManualKm(e.target.value)} style={{ ...inputStyle, fontSize:24, textAlign:"center", padding:"20px 16px" }}/>
@@ -382,14 +278,6 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
           <div style={{ fontSize:60, fontFamily:"'Cormorant Garamond', serif", fontWeight:700, color:"#ACE1AF", lineHeight:1, margin:"14px 0 8px" }}>{km}<span style={{ fontSize:22, color:"rgba(172,225,175,0.4)", fontWeight:400 }}>KM</span></div>
           <div style={{ height:1, background:"rgba(172,225,175,0.08)", margin:"20px 0" }}/>
           <div style={{ display:"flex", justifyContent:"center", gap:36 }}><div><div style={{ color:"rgba(255,255,255,0.3)", fontSize:9, fontFamily:"'Space Mono', monospace" }}>1KM 당</div><div style={{ color:"#fff", fontSize:17, fontFamily:"'Cormorant Garamond', serif", fontWeight:600, marginTop:4 }}>500원</div></div><div><div style={{ color:"rgba(255,255,255,0.3)", fontSize:9, fontFamily:"'Space Mono', monospace" }}>기부 금액</div><div style={{ color:"#ACE1AF", fontSize:17, fontFamily:"'Cormorant Garamond', serif", fontWeight:600, marginTop:4 }}>{(km*500).toLocaleString()}원</div></div></div>
-        </div>
-        <div style={{ marginTop:16, padding:"20px 18px", borderRadius:16, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontSize:11, color:"rgba(172,225,175,0.5)", fontWeight:600, marginBottom:10 }}>💳 기부금 입금 안내</div>
-          <div style={{ fontSize:15, color:"#fff", fontWeight:600, fontFamily:"'Space Mono', monospace", letterSpacing:1 }}>농협 317-0030-0411-61</div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", marginTop:4 }}>예금주 : 셀라돈</div>
-          <button onClick={()=>{navigator.clipboard.writeText('31700300041161');setCopied(true);setTimeout(()=>setCopied(false),2000);}} style={{ marginTop:12, padding:"10px 20px", borderRadius:10, border:"1px solid rgba(172,225,175,0.2)", background:copied?"rgba(172,225,175,0.15)":"transparent", cursor:"pointer", fontSize:12, fontWeight:600, color:"#ACE1AF", transition:"all 0.2s ease" }}>
-            {copied?"✓ 복사 완료!":"계좌번호 복사"}
-          </button>
         </div>
         <button onClick={()=>setScreen(SCREENS.RESULT)} style={{ width:"100%", padding:"16px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(135deg, #ACE1AF, #8FBC8F)", fontSize:14, fontWeight:700, color:"#0a0a0a", marginTop:16 }}>입금 완료 확인</button>
       </div>)}
@@ -529,7 +417,6 @@ export default function CeladonApp() {
       <div style={{ width:"100%", maxWidth:390, height:"100vh", maxHeight:844, margin:"0 auto", position:"relative", overflow:"hidden", background:"#0a0a0a", fontFamily:"'Noto Sans KR', sans-serif", borderRadius:typeof window!=='undefined'&&window.innerWidth>500?40:0, boxShadow:"0 0 100px rgba(172,225,175,0.03)" }}>
         {screen===SCREENS.SPLASH && <SplashScreen onFinish={()=>setScreen(user?SCREENS.HOME:SCREENS.LOGIN)} />}
         {screen===SCREENS.LOGIN && <LoginScreen setScreen={handleSetScreen} onLogin={handleLogin} />}
-        {screen===SCREENS.RESET_PW && <ResetPasswordScreen setScreen={handleSetScreen} />}
         {screen===SCREENS.SIGNUP && <SignupScreen setScreen={handleSetScreen} onLogin={handleLogin} />}
         {screen===SCREENS.HOME && <HomeScreen setScreen={handleSetScreen} userData={userData} profile={profile} />}
         {screen===SCREENS.UPLOAD && <UploadScreen setScreen={handleSetScreen} user={user} onUploadComplete={()=>{loadUserData();loadAllUsers();}} />}
@@ -537,7 +424,7 @@ export default function CeladonApp() {
         {screen===SCREENS.LEADERBOARD && <LeaderboardScreen allUsers={allUsers} userId={user?.id} />}
         {screen===SCREENS.EVENT && <EventScreen />}
         {screen===SCREENS.MYPAGE && <MyPageScreen userData={userData} setScreen={handleSetScreen} profile={profile} onLogout={handleLogout} />}
-        {![SCREENS.SPLASH,SCREENS.LOGIN,SCREENS.SIGNUP,SCREENS.RESET_PW,SCREENS.RESULT,SCREENS.CERTIFICATE,SCREENS.MEMBERS].includes(screen) && <NavBar screen={screen} setScreen={handleSetScreen} />}
+        {![SCREENS.SPLASH,SCREENS.LOGIN,SCREENS.SIGNUP,SCREENS.RESULT,SCREENS.CERTIFICATE,SCREENS.MEMBERS].includes(screen) && <NavBar screen={screen} setScreen={handleSetScreen} />}
       </div>
     </>
   );
