@@ -187,33 +187,6 @@ function LoginScreen({ setScreen }) {
           로그인
         </button>
 
-        {/* Divider */}
-        <div style={{ display: "flex", alignItems: "center", margin: "28px 0", gap: 16 }}>
-          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "'Space Mono', monospace" }}>OR</span>
-          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
-        </div>
-
-        {/* Social Login */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <button style={{
-            flex: 1, padding: "14px", borderRadius: 12, cursor: "pointer",
-            background: "#FEE500", border: "none",
-            fontSize: 13, fontWeight: 600, color: "#3C1E1E",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8
-          }}>
-            <span style={{ fontSize: 18 }}>💬</span> 카카오
-          </button>
-          <button style={{
-            flex: 1, padding: "14px", borderRadius: 12, cursor: "pointer",
-            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)",
-            fontSize: 13, fontWeight: 600, color: "#fff",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8
-          }}>
-            <span style={{ fontSize: 16 }}>G</span> Google
-          </button>
-        </div>
-
         {/* Forgot / Signup */}
         <div style={{ textAlign: "center", marginTop: 28 }}>
           <button style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.25)", fontSize: 12, marginBottom: 12, display: "block", width: "100%" }}>
