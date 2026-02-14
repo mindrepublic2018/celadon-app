@@ -277,6 +277,7 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
   const [imageFile, setImageFile] = useState(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const handleFileSelect = async (file) => {
     if(!file) return;
@@ -313,14 +314,21 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
     const kmVal = parseFloat(manualKm);
     if(!kmVal || kmVal<=0) return;
     setLoading(true);
+    const now = new Date();
+    const recordMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    // 같은 달 중복 체크
+    const { data: monthRecords } = await supabase.from('running_records').select('id').eq('user_id', user.id).eq('record_month', recordMonth);
+    if(monthRecords && monthRecords.length > 0) {
+      alert('이번 달은 이미 러닝 기록을 제출했습니다. 다음 달에 다시 인증해주세요.');
+      setLoading(false);
+      return;
+    }
     let imageUrl = null;
     if(imageFile) {
       const fileName = `${user.id}/${Date.now()}_${imageFile.name}`;
       const { data: ud, error: ue } = await supabase.storage.from('running-images').upload(fileName, imageFile);
       if(!ue && ud) { const { data: urlD } = supabase.storage.from('running-images').getPublicUrl(ud.path); imageUrl = urlD.publicUrl; }
     }
-    const now = new Date();
-    const recordMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
     const { error: ie } = await supabase.from('running_records').insert({ user_id:user.id, km:kmVal, image_url:imageUrl, record_month:recordMonth, payment_status:'대기'});
     if(ie) { alert('저장에 실패했습니다. 다시 시도해주세요.'); setLoading(false); return; }
     setKm(kmVal); setStep(2); setLoading(false); onUploadComplete();
@@ -374,6 +382,14 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
           <div style={{ fontSize:60, fontFamily:"'Cormorant Garamond', serif", fontWeight:700, color:"#ACE1AF", lineHeight:1, margin:"14px 0 8px" }}>{km}<span style={{ fontSize:22, color:"rgba(172,225,175,0.4)", fontWeight:400 }}>KM</span></div>
           <div style={{ height:1, background:"rgba(172,225,175,0.08)", margin:"20px 0" }}/>
           <div style={{ display:"flex", justifyContent:"center", gap:36 }}><div><div style={{ color:"rgba(255,255,255,0.3)", fontSize:9, fontFamily:"'Space Mono', monospace" }}>1KM 당</div><div style={{ color:"#fff", fontSize:17, fontFamily:"'Cormorant Garamond', serif", fontWeight:600, marginTop:4 }}>500원</div></div><div><div style={{ color:"rgba(255,255,255,0.3)", fontSize:9, fontFamily:"'Space Mono', monospace" }}>기부 금액</div><div style={{ color:"#ACE1AF", fontSize:17, fontFamily:"'Cormorant Garamond', serif", fontWeight:600, marginTop:4 }}>{(km*500).toLocaleString()}원</div></div></div>
+        </div>
+        <div style={{ marginTop:16, padding:"20px 18px", borderRadius:16, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ fontSize:11, color:"rgba(172,225,175,0.5)", fontWeight:600, marginBottom:10 }}>💳 기부금 입금 안내</div>
+          <div style={{ fontSize:15, color:"#fff", fontWeight:600, fontFamily:"'Space Mono', monospace", letterSpacing:1 }}>농협 317-0030-0411-61</div>
+          <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", marginTop:4 }}>예금주 : 셀라돈</div>
+          <button onClick={()=>{navigator.clipboard.writeText('31700300041161');setCopied(true);setTimeout(()=>setCopied(false),2000);}} style={{ marginTop:12, padding:"10px 20px", borderRadius:10, border:"1px solid rgba(172,225,175,0.2)", background:copied?"rgba(172,225,175,0.15)":"transparent", cursor:"pointer", fontSize:12, fontWeight:600, color:"#ACE1AF", transition:"all 0.2s ease" }}>
+            {copied?"✓ 복사 완료!":"계좌번호 복사"}
+          </button>
         </div>
         <button onClick={()=>setScreen(SCREENS.RESULT)} style={{ width:"100%", padding:"16px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(135deg, #ACE1AF, #8FBC8F)", fontSize:14, fontWeight:700, color:"#0a0a0a", marginTop:16 }}>입금 완료 확인</button>
       </div>)}
