@@ -43,11 +43,20 @@ function LoginScreen({ setScreen, onLogin }) {
   const [focusedField, setFocusedField] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  useEffect(() => { setTimeout(()=>setAnimate(true),100); }, []);
+  const [saveEmail, setSaveEmail] = useState(false);
+  useEffect(() => {
+    setTimeout(()=>setAnimate(true),100);
+    try {
+      const saved = document.cookie.split('; ').find(c => c.startsWith('celadon_email='));
+      if(saved) { const val = decodeURIComponent(saved.split('=')[1]); setEmail(val); setSaveEmail(true); }
+    } catch(e) {}
+  }, []);
 
   const handleLogin = async () => {
     if(!email||!password) return;
     setLoading(true); setError("");
+    if(saveEmail) { document.cookie = `celadon_email=${encodeURIComponent(email)}; max-age=${60*60*24*365}; path=/`; }
+    else { document.cookie = 'celadon_email=; max-age=0; path=/'; }
     const { data, error: ae } = await supabase.auth.signInWithPassword({ email, password });
     if(ae) { setError(ae.message==="Invalid login credentials"?"이메일 또는 비밀번호가 올바르지 않습니다":ae.message); setLoading(false); return; }
     onLogin(data.user);
@@ -69,6 +78,10 @@ function LoginScreen({ setScreen, onLogin }) {
         <div style={{ marginBottom:24 }}>
           <label style={labelStyle}>비밀번호</label>
           <input type="password" placeholder="비밀번호 입력" value={password} onChange={e=>setPassword(e.target.value)} onFocus={()=>setFocusedField("pw")} onBlur={()=>setFocusedField(null)} onKeyDown={e=>e.key==="Enter"&&handleLogin()} style={{ ...inputStyle, borderColor:focusedField==="pw"?inputFocusColor:"rgba(172,225,175,0.12)" }}/>
+        </div>
+        <div onClick={()=>setSaveEmail(!saveEmail)} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:20, cursor:"pointer" }}>
+          <div style={{ width:18, height:18, borderRadius:5, border:saveEmail?"1.5px solid #ACE1AF":"1.5px solid rgba(255,255,255,0.15)", background:saveEmail?"rgba(172,225,175,0.15)":"transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s ease", fontSize:11, color:"#ACE1AF" }}>{saveEmail&&"✓"}</div>
+          <span style={{ fontSize:12, color:"rgba(255,255,255,0.35)" }}>아이디 저장</span>
         </div>
         <button onClick={handleLogin} disabled={loading} style={{ width:"100%", padding:"16px", borderRadius:14, border:"none", cursor:loading?"wait":"pointer", background:(email&&password)?"linear-gradient(135deg, #ACE1AF, #8FBC8F)":"rgba(172,225,175,0.1)", fontSize:15, fontWeight:700, color:(email&&password)?"#0a0a0a":"rgba(172,225,175,0.3)", transition:"all 0.3s ease", opacity:loading?0.7:1 }}>
           {loading?"로그인 중...":"로그인"}
@@ -277,6 +290,7 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
   const [imageFile, setImageFile] = useState(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
+  const [ocrMonth, setOcrMonth] = useState("");
   const [copied, setCopied] = useState(false);
 
   const handleFileSelect = async (file) => {
@@ -285,6 +299,7 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
     setStep(1);
     setOcrLoading(true);
     setOcrResult(null);
+    setOcrMonth("");
     try {
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -300,7 +315,8 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
       const data = await resp.json();
       if(data.km && data.km > 0) {
         setManualKm(String(data.km));
-        setOcrResult({ success: true, km: data.km });
+        if(data.month && /^\d{4}-\d{2}$/.test(data.month)) setOcrMonth(data.month);
+        setOcrResult({ success: true, km: data.km, month: data.month || "" });
       } else {
         setOcrResult({ success: false });
       }
@@ -314,12 +330,14 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
     const kmVal = parseFloat(manualKm);
     if(!kmVal || kmVal<=0) return;
     setLoading(true);
+    // OCR에서 인식한 월 사용, 없으면 현재 월
     const now = new Date();
-    const recordMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const recordMonth = ocrMonth || currentMonth;
     // 같은 달 중복 체크
     const { data: monthRecords } = await supabase.from('running_records').select('id').eq('user_id', user.id).eq('record_month', recordMonth);
     if(monthRecords && monthRecords.length > 0) {
-      alert('이번 달은 이미 러닝 기록을 제출했습니다. 다음 달에 다시 인증해주세요.');
+      alert(`${recordMonth} 기록은 이미 제출되었습니다. 다른 월의 캡쳐를 사용해주세요.`);
       setLoading(false);
       return;
     }
@@ -362,7 +380,7 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
           <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginTop:4 }}>나이키 런클럽 캡쳐에서 km를 인식하고 있어요</div>
         </div>)}
         {ocrResult && ocrResult.success && (<div style={{ padding:"14px 18px", borderRadius:14, background:"rgba(172,225,175,0.08)", border:"1px solid rgba(172,225,175,0.15)", marginBottom:20 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:16 }}>🤖</span><div><div style={{ fontSize:12, color:"#ACE1AF", fontWeight:600 }}>AI 자동 인식 완료!</div><div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>인식된 거리가 자동 입력되었습니다. 확인 후 수정해주세요.</div></div></div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:16 }}>🤖</span><div><div style={{ fontSize:12, color:"#ACE1AF", fontWeight:600 }}>AI 자동 인식 완료!</div><div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{ocrMonth ? `${ocrMonth.replace('-','년 ')}월 · ` : ""}거리가 자동 입력되었습니다. 확인 후 수정해주세요.</div></div></div>
         </div>)}
         {ocrResult && !ocrResult.success && (<div style={{ padding:"14px 18px", borderRadius:14, background:"rgba(255,215,0,0.05)", border:"1px solid rgba(255,215,0,0.12)", marginBottom:20 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:16 }}>⚠️</span><div><div style={{ fontSize:12, color:"#FFD700", fontWeight:600 }}>자동 인식 실패</div><div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>거리를 직접 입력해주세요</div></div></div>

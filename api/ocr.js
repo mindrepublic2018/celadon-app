@@ -34,15 +34,19 @@ export default async function handler(req, res) {
             {
               type: 'text',
               text: `이 이미지는 나이키 런클럽(Nike Run Club) 또는 다른 러닝 앱의 스크린샷입니다.
-이미지에서 총 러닝 거리(km)를 찾아주세요.
+이미지에서 다음 2가지를 찾아주세요:
+
+1. 총 러닝 거리(km) - 월간 총 거리 또는 가장 큰 km 숫자
+2. 해당 월(month) - 이미지에 표시된 월 정보 (예: 1월, January, 2026.01 등)
+
+반드시 아래 JSON 형식으로만 반환하세요. 다른 텍스트 없이 JSON만:
+{"km": 42.5, "month": "2026-01"}
 
 규칙:
-- 월간 총 거리, 또는 가장 큰 km 숫자를 찾으세요
-- 숫자만 반환하세요 (단위 제외)
-- 소수점은 포함 가능 (예: 42.5)
-- 찾을 수 없으면 "0"을 반환하세요
-
-반드시 숫자만 반환하세요. 예: 42.5`
+- km: 숫자만 (소수점 가능). 찾을 수 없으면 0
+- month: YYYY-MM 형식. 찾을 수 없으면 ""
+- 연도가 안 보이면 현재 연도(2026) 사용
+- JSON 외에 다른 텍스트를 절대 포함하지 마세요`
             }
           ],
         }],
@@ -55,12 +59,22 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: data.error.message });
     }
 
-    const text = data.content?.[0]?.text || '0';
-    // 숫자만 추출
-    const match = text.match(/[\d]+\.?[\d]*/);
-    const km = match ? parseFloat(match[0]) : 0;
+    const text = data.content?.[0]?.text || '{}';
+    // JSON 파싱 시도
+    let km = 0;
+    let month = '';
+    try {
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      km = parseFloat(parsed.km) || 0;
+      month = parsed.month || '';
+    } catch(e) {
+      // JSON 파싱 실패 시 숫자만 추출
+      const match = text.match(/[\d]+\.?[\d]*/);
+      km = match ? parseFloat(match[0]) : 0;
+    }
 
-    return res.status(200).json({ km, raw: text });
+    return res.status(200).json({ km, month, raw: text });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
