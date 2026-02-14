@@ -22,7 +22,6 @@ function AdminLogin({ onLogin }) {
         <input type="password" placeholder="관리자 비밀번호" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()} style={{ ...adminInputStyle, textAlign:"center", marginBottom:16, borderColor:error?"rgba(255,100,100,0.5)":"rgba(255,255,255,0.1)" }}/>
         {error && <div style={{ fontSize:11, color:"rgba(255,100,100,0.7)", marginBottom:12 }}>비밀번호가 올바르지 않습니다</div>}
         <button onClick={handleLogin} style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", cursor:"pointer", background:`linear-gradient(135deg, ${accent}, #8FBC8F)`, fontSize:14, fontWeight:700, color:"#0a0a0a" }}>로그인</button>
-        <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)", marginTop:20, fontFamily:"'Space Mono', monospace" }}>초기 비밀번호: celadon2026</div>
       </div>
     </div>
   );
