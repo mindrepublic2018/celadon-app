@@ -34,15 +34,19 @@ function StatCard({ label, value, sub, color=accent, icon }) {
 
 function DashboardTab({ members, records }) {
   const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const thisMonthRecords = records.filter(r => r.record_month === thisMonth);
-  const totalKm = thisMonthRecords.reduce((a,r) => a + Number(r.km), 0);
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const allMonths = [...new Set([currentMonth, ...records.map(r=>r.record_month)])].filter(Boolean).sort().reverse();
+  const [selectedMonth, setSelectedMonth] = useState(allMonths[0] || currentMonth);
+
+  const selectedRecords = records.filter(r => r.record_month === selectedMonth);
+  const totalKm = selectedRecords.reduce((a,r) => a + Number(r.km), 0);
   const totalDonation = totalKm * 500;
-  const paidCount = thisMonthRecords.filter(r => r.payment_status === "완료").length;
-  const pendingCount = thisMonthRecords.filter(r => r.payment_status === "대기").length;
-  const unpaidCount = thisMonthRecords.filter(r => r.payment_status === "미납").length;
-  const goalKm = members.reduce((a,m) => { const userRecs = records.filter(r=>r.user_id===m.id); return a + userRecs.reduce((s,r)=>s+Number(r.km),0); }, 0);
+  const paidCount = selectedRecords.filter(r => r.payment_status === "완료").length;
+  const pendingCount = selectedRecords.filter(r => r.payment_status === "대기").length;
+  const unpaidCount = selectedRecords.filter(r => r.payment_status === "미납").length;
+  const goalKm = records.reduce((a,r) => a + Number(r.km), 0);
   const goalProgress = ((goalKm/100000)*100).toFixed(1);
+  const formatMonth = (m) => { const [y,mo] = m.split('-'); return `${y}년 ${Number(mo)}월`; };
 
   // 월별 데이터 계산
   const monthlyData = [];
@@ -57,7 +61,7 @@ function DashboardTab({ members, records }) {
 
   // TOP 5
   const userKmMap = {};
-  thisMonthRecords.forEach(r => { userKmMap[r.user_id] = (userKmMap[r.user_id]||0) + Number(r.km); });
+  selectedRecords.forEach(r => { userKmMap[r.user_id] = (userKmMap[r.user_id]||0) + Number(r.km); });
   const top5 = Object.entries(userKmMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([uid, km]) => {
     const member = members.find(m=>m.id===uid);
     return { name: member?.name || "?", km: Math.round(km), donation: Math.round(km*500) };
@@ -65,15 +69,20 @@ function DashboardTab({ members, records }) {
 
   return (
     <div>
-      <div style={{ fontSize:18, fontFamily:"'Cormorant Garamond', serif", fontWeight:600, color:"#fff", marginBottom:20 }}>대시보드</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div style={{ fontSize:18, fontFamily:"'Cormorant Garamond', serif", fontWeight:600, color:"#fff" }}>대시보드</div>
+        <select value={selectedMonth} onChange={e=>setSelectedMonth(e.target.value)} style={{padding:"6px 12px",borderRadius:8,fontSize:12,background:"rgba(255,255,255,0.05)",color:accent,border:`1px solid rgba(172,225,175,0.2)`,outline:"none",cursor:"pointer"}}>
+          {allMonths.map(m=>(<option key={m} value={m}>{formatMonth(m)}</option>))}
+        </select>
+      </div>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
         <StatCard label="총 멤버" value={`${members.length}명`} icon="👥" />
-        <StatCard label="이번 달 총 거리" value={`${Math.round(totalKm).toLocaleString()}km`} icon="🏃" />
-        <StatCard label="이번 달 기부금" value={`${totalDonation.toLocaleString()}원`} icon="💚" />
+        <StatCard label={`${formatMonth(selectedMonth)} 거리`} value={`${Math.round(totalKm).toLocaleString()}km`} icon="🏃" />
+        <StatCard label={`${formatMonth(selectedMonth)} 기부금`} value={`${totalDonation.toLocaleString()}원`} icon="💚" />
         <StatCard label="10만km 달성률" value={`${goalProgress}%`} sub={`${goalKm.toLocaleString()} / 100,000 km`} icon="🎯" />
       </div>
       <div style={{ padding:"20px", borderRadius:16, background:cardBg, border:cardBorder, marginBottom:20 }}>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.4)", fontFamily:"'Space Mono', monospace", letterSpacing:1, marginBottom:16 }}>이번 달 입금 현황</div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.4)", fontFamily:"'Space Mono', monospace", letterSpacing:1, marginBottom:16 }}>{formatMonth(selectedMonth)} 입금 현황</div>
         <div style={{ display:"flex", gap:12 }}>
           {[{label:"완료",count:paidCount,color:"#ACE1AF",bg:"rgba(172,225,175,0.1)"},{label:"대기",count:pendingCount,color:"#FFD700",bg:"rgba(255,215,0,0.1)"},{label:"미납",count:unpaidCount,color:"#FF6B6B",bg:"rgba(255,107,107,0.1)"}].map(s=>(<div key={s.label} style={{flex:1,padding:"14px",borderRadius:12,background:s.bg,textAlign:"center"}}><div style={{fontSize:22,fontFamily:"'Cormorant Garamond', serif",fontWeight:700,color:s.color}}>{s.count}</div><div style={{fontSize:10,color:s.color,marginTop:4,opacity:0.7}}>{s.label}</div></div>))}
         </div>
@@ -85,7 +94,7 @@ function DashboardTab({ members, records }) {
         </div>
       </div>
       <div style={{ padding:"20px", borderRadius:16, background:cardBg, border:cardBorder }}>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.4)", fontFamily:"'Space Mono', monospace", letterSpacing:1, marginBottom:16 }}>이번 달 TOP 5</div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.4)", fontFamily:"'Space Mono', monospace", letterSpacing:1, marginBottom:16 }}>{formatMonth(selectedMonth)} TOP 5</div>
         {top5.length===0 && <div style={{fontSize:12,color:"rgba(255,255,255,0.2)",padding:"12px 0"}}>아직 데이터가 없습니다</div>}
         {top5.map((m,i)=>(<div key={i} style={{display:"flex",alignItems:"center",padding:"10px 0",borderBottom:i<top5.length-1?"1px solid rgba(255,255,255,0.04)":"none"}}><span style={{width:24,fontSize:12,color:i<3?accent:"rgba(255,255,255,0.3)",fontWeight:600}}>{i+1}</span><span style={{flex:1,fontSize:13,color:"#fff",fontWeight:500}}>{m.name}</span><span style={{fontSize:13,color:accent,fontFamily:"'Cormorant Garamond', serif",fontWeight:600}}>{m.km}km</span><span style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginLeft:12,width:60,textAlign:"right"}}>{m.donation.toLocaleString()}원</span></div>))}
       </div>
@@ -187,11 +196,15 @@ function MembersTab({ members, records, onRefresh }) {
 
 function DonationsTab({ members, records, onRefresh }) {
   const [filterStatus, setFilterStatus] = useState("전체");
+  // 월 목록 생성 (records에 있는 모든 월 + 현재 월)
   const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const thisMonthRecords = records.filter(r=>r.record_month===thisMonth);
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const allMonths = [...new Set([currentMonth, ...records.map(r=>r.record_month)])].filter(Boolean).sort().reverse();
+  const [selectedMonth, setSelectedMonth] = useState(allMonths[0] || currentMonth);
 
-  const enriched = thisMonthRecords.map(r => {
+  const monthRecords = records.filter(r=>r.record_month===selectedMonth);
+
+  const enriched = monthRecords.map(r => {
     const member = members.find(m=>m.id===r.user_id);
     return { ...r, name: member?.name||"?", full_name: member?.full_name||"?", km: Number(r.km), donation: Number(r.km)*500 };
   });
@@ -207,12 +220,18 @@ function DonationsTab({ members, records, onRefresh }) {
   };
 
   const statusColor = (s) => s==="완료"?"#ACE1AF":s==="대기"?"#FFD700":"#FF6B6B";
+  const formatMonth = (m) => { const [y,mo] = m.split('-'); return `${y}년 ${Number(mo)}월`; };
 
   return (
     <div>
-      <div style={{fontSize:18,fontFamily:"'Cormorant Garamond', serif",fontWeight:600,color:"#fff",marginBottom:20}}>기부금 현황</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div style={{fontSize:18,fontFamily:"'Cormorant Garamond', serif",fontWeight:600,color:"#fff"}}>기부금 현황</div>
+        <select value={selectedMonth} onChange={e=>setSelectedMonth(e.target.value)} style={{padding:"6px 12px",borderRadius:8,fontSize:12,background:"rgba(255,255,255,0.05)",color:accent,border:`1px solid rgba(172,225,175,0.2)`,outline:"none",cursor:"pointer"}}>
+          {allMonths.map(m=>(<option key={m} value={m}>{formatMonth(m)}</option>))}
+        </select>
+      </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
-        <div style={{padding:"16px",borderRadius:14,background:cardBg,border:cardBorder,textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:"'Space Mono', monospace"}}>이번 달 총액</div><div style={{fontSize:16,color:accent,fontFamily:"'Cormorant Garamond', serif",fontWeight:700,marginTop:6}}>{totalThis.toLocaleString()}원</div></div>
+        <div style={{padding:"16px",borderRadius:14,background:cardBg,border:cardBorder,textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:"'Space Mono', monospace"}}>{formatMonth(selectedMonth)} 총액</div><div style={{fontSize:16,color:accent,fontFamily:"'Cormorant Garamond', serif",fontWeight:700,marginTop:6}}>{totalThis.toLocaleString()}원</div></div>
         <div style={{padding:"16px",borderRadius:14,background:cardBg,border:cardBorder,textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:"'Space Mono', monospace"}}>입금 완료</div><div style={{fontSize:16,color:"#ACE1AF",fontFamily:"'Cormorant Garamond', serif",fontWeight:700,marginTop:6}}>{paidAmount.toLocaleString()}원</div></div>
         <div style={{padding:"16px",borderRadius:14,background:cardBg,border:cardBorder,textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:"'Space Mono', monospace"}}>누적 총액</div><div style={{fontSize:16,color:"#fff",fontFamily:"'Cormorant Garamond', serif",fontWeight:700,marginTop:6}}>{totalAll.toLocaleString()}원</div></div>
       </div>
