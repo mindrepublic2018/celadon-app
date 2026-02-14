@@ -321,8 +321,8 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
     }
     const now = new Date();
     const recordMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    const { error: ie } = await supabase.from('running_records').insert({ user_id:user.id, km:kmVal, image_url:imageUrl, record_month:recordMonth, payment_status: + "대기" + r});
-    if(ie) { alert( + "저장에 실패했습니다. 다시 시도해주세요." + r); setLoading(false); return; }
+    const { error: ie } = await supabase.from('running_records').insert({ user_id:user.id, km:kmVal, image_url:imageUrl, record_month:recordMonth, payment_status:'대기'});
+    if(ie) { alert('저장에 실패했습니다. 다시 시도해주세요.'); setLoading(false); return; }
     setKm(kmVal); setStep(2); setLoading(false); onUploadComplete();
   };
 
