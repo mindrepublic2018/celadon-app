@@ -666,7 +666,7 @@ export default function CeladonApp() {
   };
 
   const handleLogin = (authUser) => { setUser(authUser); setScreen(SCREENS.HOME); };
-  const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); setProfile(null); setScreen(SCREENS.LOGIN); };
+  const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); setProfile(null); setUserData({ totalKm:0, totalDonation:0, runCount:0, months:1, goalPercent:0, totalAllKm:0, totalMembers:0, rank:"-" }); setAllUsers([]); setScreen(SCREENS.LOGIN); };
   const handleSetScreen = (s) => { if(s!==SCREENS.CERTIFICATE) setCertRecord(null); setScreen(s); };
 
   return (
