@@ -470,7 +470,7 @@ function EventScreen() {
 function MyPageScreen({ userData, setScreen, profile, onLogout, onViewCertificate }) {
   const [animate, setAnimate] = useState(false);
   const [records, setRecords] = useState([]);
-  useEffect(() => { setTimeout(()=>setAnimate(true),100); if(profile?.id) supabase.from('running_records').select('*').eq('user_id',profile.id).order('created_at',{ascending:false}).then(({data})=>{if(data)setRecords(data);}); }, []);
+  useEffect(() => { setTimeout(()=>setAnimate(true),100); if(profile?.id) supabase.from('running_records').select('*').eq('user_id',profile.id).order('created_at',{ascending:false}).then(({data})=>{if(data)setRecords(data);}); }, [profile?.id]);
   return (
     <div style={{ height:"100%", overflowY:"auto", paddingBottom:90, background:"linear-gradient(180deg, #0a0a0a 0%, #0d1a12 100%)" }}>
       <ScreenHeader label="MY PAGE" title="마이페이지" />
