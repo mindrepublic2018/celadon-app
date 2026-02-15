@@ -345,10 +345,11 @@ function UploadScreen({ setScreen, user, onUploadComplete }) {
     if(imageFile) {
       const fileName = `${user.id}/${Date.now()}_${imageFile.name}`;
       const { data: ud, error: ue } = await supabase.storage.from('running-images').upload(fileName, imageFile);
+      if(ue) { console.error('Storage error:', ue); }
       if(!ue && ud) { const { data: urlD } = supabase.storage.from('running-images').getPublicUrl(ud.path); imageUrl = urlD.publicUrl; }
     }
     const { error: ie } = await supabase.from('running_records').insert({ user_id:user.id, km:kmVal, image_url:imageUrl, record_month:recordMonth, payment_status:'대기'});
-    if(ie) { alert('저장에 실패했습니다. 다시 시도해주세요.'); setLoading(false); return; }
+    if(ie) { alert('저장 실패: ' + ie.message + ' (code: ' + ie.code + ')'); setLoading(false); return; }
     setKm(kmVal); setStep(2); setLoading(false); onUploadComplete();
   };
 
